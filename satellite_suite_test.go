@@ -1,12 +1,13 @@
 package satellite
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
+	"log"
 	"strconv"
 	"strings"
 	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 func TestSatellite(t *testing.T) {
@@ -22,7 +23,7 @@ type Result struct {
 var _ = Describe("go-satellite", func() {
 	Describe("ParseTLE", func() {
 		It("should return correctly parsed values for given ISS#25544", func() {
-			sat := ParseTLE("1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927", "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537", "wgs84")
+			sat, _ := ParseTLE("1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927", "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537", "wgs84")
 
 			Expect(sat.satnum).To(Equal(int64(25544)))
 			Expect(sat.epochyr).To(Equal(int64(8)))
@@ -40,7 +41,7 @@ var _ = Describe("go-satellite", func() {
 		})
 
 		It("should return correctly parsed values for given NOAA 19#33591", func() {
-			sat := ParseTLE("1 33591U 09005A   16163.48990228  .00000077  00000-0  66998-4 0  9990", "2 33591  99.0394 120.2160 0013054 232.8317 127.1662 14.12079902378332", "wgs84")
+			sat, _ := ParseTLE("1 33591U 09005A   16163.48990228  .00000077  00000-0  66998-4 0  9990", "2 33591  99.0394 120.2160 0013054 232.8317 127.1662 14.12079902378332", "wgs84")
 
 			Expect(sat.satnum).To(Equal(int64(33591)))
 			Expect(sat.epochyr).To(Equal(int64(16)))
@@ -58,7 +59,7 @@ var _ = Describe("go-satellite", func() {
 		})
 
 		It("should return correctly parsed values for given TITAN 3C#4362", func() {
-			sat := ParseTLE("1 04632U 70093B   04031.91070959 -.00000084  00000-0  10000-3 0  9955", "2 04632  11.4628 273.1101 1450506 207.6000 143.9350  1.20231981 44145", "wgs84")
+			sat, _ := ParseTLE("1 04632U 70093B   04031.91070959 -.00000084  00000-0  10000-3 0  9955", "2 04632  11.4628 273.1101 1450506 207.6000 143.9350  1.20231981 44145", "wgs84")
 
 			Expect(sat.satnum).To(Equal(int64(4632)))
 			Expect(sat.epochyr).To(Equal(int64(4)))
@@ -221,7 +222,7 @@ var _ = Describe("go-satellite", func() {
 			PropagationTestCase{
 				line1: "1 23599U 95029B   06171.76535463  .00085586  12891-6  12956-2 0  2905",
 				line2: "2 23599   6.9327   0.2849 5782022 274.4436  25.2425  4.47796565123555",
-				grav: "wgs72",
+				grav:  "wgs72",
 				testData: `0.00000000 9892.63794341 35.76144969 -1.08228838 3.556643237 6.456009375 0.783610890       
 20.00000000 11931.95642997 7340.74973750 886.46365987 0.308329116 5.532328972 0.672887281
 40.00000000 11321.71039205 13222.84749156 1602.40119049 -1.151973982 4.285810871 0.521919425
@@ -273,17 +274,17 @@ type PropagationTestCase struct {
 }
 
 func propagationTest(testCase PropagationTestCase) {
-	satrec := TLEToSat(testCase.line1, testCase.line2, testCase.grav)
+	satrec, _ := TLEToSat(testCase.line1, testCase.line2, testCase.grav)
 	lines := strings.Split(testCase.testData, "\n")
 
 	for _, line := range lines {
 		Context("Satnum "+strconv.FormatInt(satrec.satnum, 10), func() {
 			theoData := strings.Split(line, " ")
 
-			theoPos := Vector3{X: parseFloat(theoData[1]), Y: parseFloat(theoData[2]), Z: parseFloat(theoData[3])}
-			theoVel := Vector3{X: parseFloat(theoData[4]), Y: parseFloat(theoData[5]), Z: parseFloat(theoData[6])}
+			theoPos := Vector3{X: tparseFloat(theoData[1]), Y: tparseFloat(theoData[2]), Z: tparseFloat(theoData[3])}
+			theoVel := Vector3{X: tparseFloat(theoData[4]), Y: tparseFloat(theoData[5]), Z: tparseFloat(theoData[6])}
 
-			expPos, expVel := sgp4(&satrec, parseFloat(theoData[0]))
+			expPos, expVel := sgp4(satrec, tparseFloat(theoData[0]))
 
 			It("Should produce accurate results for time "+theoData[0], func() {
 				Expect(expPos.X).To(BeNumerically("~", theoPos.X, 0.0001))
@@ -296,4 +297,12 @@ func propagationTest(testCase PropagationTestCase) {
 			})
 		})
 	}
+}
+
+func tparseFloat(s string) float64 {
+	f, err := parseFloat(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return f
 }

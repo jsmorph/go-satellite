@@ -1,7 +1,6 @@
 package satellite
 
 import (
-	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -29,7 +28,9 @@ type LookAngles struct {
 }
 
 // Parses a two line element dataset into a Satellite struct
-func ParseTLE(line1, line2, gravconst string) (sat Satellite) {
+func ParseTLE(line1, line2, gravconst string) (sat *Satellite, err error) {
+	sat = &Satellite{}
+
 	sat.Line1 = line1
 	sat.Line2 = line2
 
@@ -37,31 +38,73 @@ func ParseTLE(line1, line2, gravconst string) (sat Satellite) {
 	sat.whichconst = getGravConst(gravconst)
 
 	// LINE 1 BEGIN
-	sat.satnum = parseInt(strings.TrimSpace(line1[2:7]))
-	sat.epochyr = parseInt(line1[18:20])
-	sat.epochdays = parseFloat(line1[20:32])
+	sat.satnum, err = parseInt(strings.TrimSpace(line1[2:7]))
+	if err != nil {
+		return nil, err
+	}
+	sat.epochyr, err = parseInt(line1[18:20])
+	if err != nil {
+		return nil, err
+	}
+	sat.epochdays, err = parseFloat(line1[20:32])
+	if err != nil {
+		return nil, err
+	}
 
 	// These three can be negative / positive
-	sat.ndot = parseFloat(strings.Replace(line1[33:43], " ", "", 2))
-	sat.nddot = parseFloat(strings.Replace(line1[44:45]+"."+line1[45:50]+"e"+line1[50:52], " ", "", 2))
-	sat.bstar = parseFloat(strings.Replace(line1[53:54]+"."+line1[54:59]+"e"+line1[59:61], " ", "", 2))
+	sat.ndot, err = parseFloat(strings.Replace(line1[33:43], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
+
+	sat.nddot, err = parseFloat(strings.Replace(line1[44:45]+"."+line1[45:50]+"e"+line1[50:52], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
+
+	sat.bstar, err = parseFloat(strings.Replace(line1[53:54]+"."+line1[54:59]+"e"+line1[59:61], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
 	// LINE 1 END
 
 	// LINE 2 BEGIN
-	sat.inclo = parseFloat(strings.Replace(line2[8:16], " ", "", 2))
-	sat.nodeo = parseFloat(strings.Replace(line2[17:25], " ", "", 2))
-	sat.ecco = parseFloat("." + line2[26:33])
-	sat.argpo = parseFloat(strings.Replace(line2[34:42], " ", "", 2))
-	sat.mo = parseFloat(strings.Replace(line2[43:51], " ", "", 2))
-	sat.no = parseFloat(strings.Replace(line2[52:63], " ", "", 2))
+	sat.inclo, err = parseFloat(strings.Replace(line2[8:16], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
+	sat.nodeo, err = parseFloat(strings.Replace(line2[17:25], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
+	sat.ecco, err = parseFloat("." + line2[26:33])
+	if err != nil {
+		return nil, err
+	}
+	sat.argpo, err = parseFloat(strings.Replace(line2[34:42], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
+	sat.mo, err = parseFloat(strings.Replace(line2[43:51], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
+	sat.no, err = parseFloat(strings.Replace(line2[52:63], " ", "", 2))
+	if err != nil {
+		return nil, err
+	}
+
 	// LINE 2 END
 	return
 }
 
 // Converts a two line element data set into a Satellite struct and runs sgp4init
-func TLEToSat(line1, line2 string, gravconst string) Satellite {
+func TLEToSat(line1, line2 string, gravconst string) (*Satellite, error) {
 	//sat := Satellite{Line1: line1, Line2: line2}
-	sat := ParseTLE(line1, line2, gravconst)
+	sat, err := ParseTLE(line1, line2, gravconst)
+	if err != nil {
+		return nil, err
+	}
 
 	opsmode := "i"
 
@@ -85,25 +128,17 @@ func TLEToSat(line1, line2 string, gravconst string) Satellite {
 
 	sat.jdsatepoch = JDay(int(year), int(mon), int(day), int(hr), int(min), int(sec))
 
-	sgp4init(&opsmode, sat.jdsatepoch-2433281.5, &sat)
+	sgp4init(&opsmode, sat.jdsatepoch-2433281.5, sat)
 
-	return sat
+	return sat, nil
 }
 
 // Parses a string into a float64 value.
-func parseFloat(strIn string) (ret float64) {
-	ret, err := strconv.ParseFloat(strIn, 64)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return ret
+func parseFloat(strIn string) (float64, error) {
+	return strconv.ParseFloat(strIn, 64)
 }
 
 // Parses a string into a int64 value.
-func parseInt(strIn string) (ret int64) {
-	ret, err := strconv.ParseInt(strIn, 10, 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return ret
+func parseInt(strIn string) (int64, error) {
+	return strconv.ParseInt(strIn, 10, 0)
 }
