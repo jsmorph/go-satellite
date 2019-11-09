@@ -1,6 +1,7 @@
 package satellite
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -29,6 +30,14 @@ type LookAngles struct {
 
 // Parses a two line element dataset into a Satellite struct
 func ParseTLE(line1, line2, gravconst string) (sat *Satellite, err error) {
+	if len(line1) < 61 {
+		return nil, fmt.Errorf("Line 1 '%s' too short", line1)
+	}
+
+	if len(line2) < 63 {
+		return nil, fmt.Errorf("Line 2 '%s' too short", line2)
+	}
+
 	sat = &Satellite{}
 
 	sat.Line1 = line1
