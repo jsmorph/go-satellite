@@ -5,6 +5,8 @@ type Satellite struct {
 	Line1 string
 	Line2 string
 
+	elements *Elements
+
 	satnum int64
 
 	Error      int64
@@ -114,4 +116,8 @@ type Satellite struct {
 	xl2   float64
 	xlamo float64
 	atime float64
+}
+
+func (s *Satellite) Elements() *Elements {
+	return s.elements
 }

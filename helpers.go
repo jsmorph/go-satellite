@@ -28,6 +28,12 @@ type LookAngles struct {
 	Az, El, Rg float64
 }
 
+type Elements struct {
+	MeanMotion   float64
+	Eccentricity float64
+	Inclination  float64
+}
+
 // Parses a two line element dataset into a Satellite struct
 func ParseTLE(line1, line2, gravconst string) (sat *Satellite, err error) {
 	if len(line1) < 61 {
@@ -104,6 +110,12 @@ func ParseTLE(line1, line2, gravconst string) (sat *Satellite, err error) {
 	}
 
 	// LINE 2 END
+
+	sat.elements = &Elements{
+		MeanMotion:   sat.no,
+		Eccentricity: sat.ecco,
+		Inclination:  sat.inclo,
+	}
 	return
 }
 
