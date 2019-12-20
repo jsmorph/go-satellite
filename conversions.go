@@ -40,7 +40,25 @@ func days2mdhms(year int64, epochDays float64) (mon, day, hr, min, sec float64) 
 // Calc julian date given year, month, day, hour, minute and second
 // the julian date is defined by each elapsed day since noon, jan 1, 4713 bc.
 func JDay(year, mon, day, hr, min, sec int) float64 {
-	return (367.0*float64(year) - math.Floor((7*(float64(year)+math.Floor((float64(mon)+9)/12.0)))*0.25) + math.Floor(275*float64(mon)/9.0) + float64(day) + 1721013.5 + ((float64(sec)/60.0+float64(min))/60.0+float64(hr))/24.0)
+	return (367.0*float64(year) -
+		math.Floor((7*(float64(year)+math.Floor((float64(mon)+9)/12.0)))*0.25) +
+		math.Floor(275*float64(mon)/9.0) +
+		float64(day) +
+		1721013.5 +
+		((float64(sec)/60.0+float64(min))/60.0+float64(hr))/24.0)
+}
+
+// Calc julian date given year, month, day, hour, minute and second
+// the julian date is defined by each elapsed day since noon, jan 1, 4713 bc.
+func JDayNano(year, mon, day, hr, min, sec, ns int) float64 {
+	secs := float64(sec) + float64(ns)/1000/1000/1000
+	return (367.0*float64(year) -
+		math.Floor((7*(float64(year)+math.Floor((float64(mon)+9)/12.0)))*0.25) +
+		math.Floor(275*float64(mon)/9.0) +
+		float64(day) +
+		1721013.5 +
+		((float64(secs)/60.0+float64(min))/60.0+float64(hr))/24.0)
+	// ToDo: Factor.
 }
 
 // this function finds the greenwich sidereal time (iau-82)
@@ -60,6 +78,11 @@ func gstime(jdut1 float64) (temp float64) {
 func GSTimeFromDate(year, mon, day, hr, min, sec int) float64 {
 	jDay := JDay(year, mon, day, hr, min, sec)
 	return gstime(jDay)
+}
+
+func GSTimeFromDateNano(year, mon, day, hr, min, sec int, ns int) (float64, float64) {
+	j := JDayNano(year, mon, day, hr, min, sec, ns)
+	return gstime(j), j
 }
 
 // Convert Earth Centered Inertial coordinated into equivalent latitude, longitude, altitude and velocity.

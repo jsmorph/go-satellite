@@ -298,6 +298,17 @@ func Propagate(sat Satellite, year int, month int, day, hours, minutes, seconds 
 	return sgp4(&sat, m)
 }
 
+func PropagateNano(sat Satellite, year int, month int, day, hours, minutes, seconds int, ns int) (position, velocity Vector3) {
+	j := JDayNano(year, month, day, hours, minutes, seconds, ns)
+	m := (j - sat.jdsatepoch) * 1440
+	return sgp4(&sat, m)
+}
+
+func PropagateJDay(sat Satellite, j float64) (position, velocity Vector3) {
+	m := (j - sat.jdsatepoch) * 1440
+	return sgp4(&sat, m)
+}
+
 // this procedure is the sgp4 prediction model from space command. this is an updated and combined version of sgp4 and sdp4, which were originally published separately in spacetrack report #3. this version follows the methodology from the aiaa paper (2006) describing the history and development of the code.
 // satrec - initialized Satellite struct from sgp4init
 // tsince - time since epoch in minutes
