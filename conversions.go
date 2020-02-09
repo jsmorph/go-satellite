@@ -1,7 +1,7 @@
 package satellite
 
 import (
-	"log"
+	"fmt"
 	"math"
 )
 
@@ -119,7 +119,7 @@ func ECIToLLA(eciCoords Vector3, gmst float64) (altitude, velocity float64, ret 
 }
 
 // Convert LatLong in radians to LatLong in degrees
-func LatLongDeg(rad LatLong) (deg LatLong) {
+func LatLongDeg(rad LatLong) (deg LatLong, err error) {
 	deg.Longitude = math.Mod(rad.Longitude/math.Pi*180, 360)
 	if deg.Longitude > 180 {
 		deg.Longitude = 360 - deg.Longitude
@@ -128,7 +128,8 @@ func LatLongDeg(rad LatLong) (deg LatLong) {
 	}
 
 	if rad.Latitude < (-math.Pi/2) || rad.Latitude > math.Pi/2 {
-		log.Fatal("Latitude not within bounds -pi/2 to +pi/2")
+		err = fmt.Errorf("Latitude %f rad not within bounds -pi/2 to +pi/2", rad.Latitude)
+		return
 	}
 	deg.Latitude = (rad.Latitude / math.Pi * 180)
 	return
